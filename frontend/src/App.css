@@ -67,3 +67,4 @@
 .table-search:focus-within, .phone-input:focus-within, .member-form input:focus, .member-form select:focus, .login-card input:focus { box-shadow: 0 0 0 3px rgba(180, 72, 50, .11); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }.signature-mark { animation: none; } }
 .person-photo { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; background: #e8d9cd; }
+.detail-photo { display: grid; width: 72px; height: 72px; margin: 0 auto 16px; place-items: center; border-radius: 50%; color: #776b60; background: #e8d9cd; font-family: var(--mono); font-size: 16px; object-fit: cover; }
