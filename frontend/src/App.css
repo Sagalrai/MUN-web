@@ -1,6 +1,7 @@
 :root { --ink: #25231f; --muted: #7d786e; --line: #ded9cf; --paper: #f5f2eb; --surface: #fbfaf6; --accent: #b44832; --olive: #68735f; --mono: 'DM Mono', monospace; }
 * { box-sizing: border-box; }
 .app-layout { min-height: 100vh; display: flex; background: var(--paper); }
+.signature-mark { position: fixed; z-index: 6; right: 24px; bottom: 18px; color: var(--accent); font-family: 'Segoe Script', 'Brush Script MT', cursive; font-size: 19px; font-style: italic; line-height: 1; transform: rotate(-8deg); opacity: .82; pointer-events: none; }
 .sidebar { width: 242px; flex: 0 0 242px; display: flex; flex-direction: column; min-height: 100vh; padding: 30px 18px 22px; border-right: 1px solid var(--line); background: #eeeae1; }
 .sidebar-brand { display: flex; align-items: center; gap: 11px; padding: 0 10px 43px; }
 .sidebar-brand strong { display: block; font-size: 15px; letter-spacing: 2px; }
