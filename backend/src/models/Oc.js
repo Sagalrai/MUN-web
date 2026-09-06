@@ -8,8 +8,7 @@ const ocSchema = new mongoose.Schema(
     email: { type: String, required: true, trim: true },
     phone: { type: String, required: true, trim: true },
     school: { type: String, required: true, trim: true },
-    department: { type: String, required: true, trim: true },
-    position: { type: String, required: true, trim: true }
+    role: { type: String, required: true, trim: true }
   },
   { timestamps: true }
 );

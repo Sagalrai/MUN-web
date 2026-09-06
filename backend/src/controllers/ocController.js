@@ -2,7 +2,7 @@ import Oc from '../models/Oc.js';
 
 export const getOcs = async (req, res) => {
   try {
-    const { search, department, position, school } = req.query;
+    const { search, role, school } = req.query;
     const query = {};
 
     if (search) {
@@ -15,8 +15,7 @@ export const getOcs = async (req, res) => {
       ];
     }
 
-    if (department) query.department = department;
-    if (position) query.position = position;
+    if (role) query.role = role;
     if (school) query.school = school;
 
     const ocs = await Oc.find(query).sort({ createdAt: -1 });
@@ -38,12 +37,12 @@ export const getOcById = async (req, res) => {
 
 export const createOc = async (req, res) => {
   try {
-    const { name, email, phone, school, department, position } = req.body;
-    if (!name || !email || !phone || !school || !department || !position) {
+    const { name, email, phone, school, role } = req.body;
+    if (!name || !email || !phone || !school || !role) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
-    const oc = await new Oc({ name, email, phone, school, department, position }).save();
+    const oc = await new Oc({ name, email, phone, school, role}).save();
     res.status(201).json(oc);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -52,10 +51,10 @@ export const createOc = async (req, res) => {
 
 export const updateOc = async (req, res) => {
   try {
-    const { name, email, phone, school, department, position } = req.body;
+    const { name, email, phone, school, role} = req.body;
     const oc = await Oc.findOneAndUpdate(
       { ocId: req.params.id },
-      { name, email, phone, school, department, position },
+      { name, email, phone, school, role},
       { returnDocument: 'after', runValidators: true }
     );
     if (!oc) return res.status(404).json({ message: 'OC not found' });

@@ -4,7 +4,7 @@ import Volunteer from '../models/Volunteer.js';
 
 const fields = {
   delegates: ['name', 'email', 'phone', 'school', 'committee', 'country'],
-  volunteers: ['name', 'email', 'phone', 'school', 'department', 'position'],
+  volunteers: ['name', 'email', 'phone', 'school', 'role'],
 };
 
 const validateRows = (rows, type) => rows.map((row, index) => {

@@ -1,8 +1,7 @@
 import mongoose from 'mongoose';
 import Counter from './Counter.js';
 
-const departments = ['Marketing & PR', 'Design & IT', 'Finance', 'Logistics', 'Delegate Affairs', 'Hospitality', 'Crisis', 'Executive Board'];
-const positions = ['President', 'Vice President', 'Treasurer', 'Chapter Head', 'Chief of Staff', 'Secretary General', 'Director General', 'Head', 'Member'];
+const role = ['President', 'Vice President', 'Treasurer', 'Chief Of Staffs', 'Chapter Head', 'Secretary General', 'Director General','Marketing & PR', 'Design & IT', 'Finance', 'Logistics', 'Delegate Affairs', 'Hospitality', 'Crisis',];
 
 const volunteerSchema = new mongoose.Schema(
   {
@@ -11,9 +10,7 @@ const volunteerSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, trim: true, lowercase: true },
     phone: { type: String, required: true, trim: true, match: /^\+977\d{10}$/ },
     school: { type: String, required: true, trim: true },
-    department: { type: String, required: true, enum: departments, trim: true },
-    position: { type: String, required: true, enum: positions, trim: true },
-    photo: { type: String, default: '' },
+    role: { type: String, required: true, enum: role, trim: true },
   },
   { timestamps: true }
 );

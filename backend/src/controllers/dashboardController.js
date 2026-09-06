@@ -10,7 +10,7 @@ export const getDashboardStats = async (req, res) => {
       Delegate.distinct('country'),
       Delegate.distinct('committee'),
       Delegate.find().sort({ createdAt: -1 }).limit(5).select('delegateId name createdAt'),
-      Volunteer.find().sort({ createdAt: -1 }).limit(5).select('volunteerId name position createdAt'),
+      Volunteer.find().sort({ createdAt: -1 }).limit(5).select('volunteerId name role createdAt'),
     ]);
 
     const activity = [

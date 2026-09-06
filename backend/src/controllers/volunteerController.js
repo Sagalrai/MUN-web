@@ -1,13 +1,13 @@
 import Volunteer from '../models/Volunteer.js';
 
-const editableFields = ['name', 'email', 'phone', 'school', 'department', 'position', 'photo'];
+const editableFields = ['name', 'email', 'phone', 'school', 'role'];
 
 const pickEditableFields = (body) =>
   Object.fromEntries(editableFields.filter((field) => body[field] !== undefined).map((field) => [field, body[field]]));
 
 export const getVolunteers = async (req, res) => {
   try {
-    const { search, department, position, school } = req.query;
+    const { search, role, school } = req.query;
     const query = {};
 
     if (search) {
@@ -17,13 +17,11 @@ export const getVolunteers = async (req, res) => {
         { volunteerId: { $regex: escapedSearch, $options: 'i' } },
         { email: { $regex: escapedSearch, $options: 'i' } },
         { school: { $regex: escapedSearch, $options: 'i' } },
-        { department: { $regex: escapedSearch, $options: 'i' } },
-        { position: { $regex: escapedSearch, $options: 'i' } },
+        { role: { $regex: escapedSearch, $options: 'i' } },
       ];
     }
 
-    if (department) query.department = department;
-    if (position) query.position = position;
+    if (role) query.role = role;
     if (school) query.school = school;
 
     const volunteers = await Volunteer.find(query).sort({ createdAt: -1 });

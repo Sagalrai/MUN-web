@@ -18,7 +18,7 @@ const seed = async () => {
     if (!password || !email) throw new Error('SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD are required to seed the admin account');
     await Admin.findOneAndUpdate(
       { email },
-      { name: 'Sagal Chamling Rai', email, passwordHash: await bcrypt.hash(password, 12), role: 'Super Admin' },
+      { name: 'ParivartanSoc', email, passwordHash: await bcrypt.hash(password, 12), role: 'Super Admin' },
       { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
     console.log('Database cleared. Admin account is ready.');
