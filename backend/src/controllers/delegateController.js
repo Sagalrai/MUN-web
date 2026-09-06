@@ -93,7 +93,8 @@ export const deleteDelegate = async (req, res) => {
 
 export const getPublicDelegate = async (req, res) => {
   try {
-    const delegate = await Delegate.findOne({ delegateId: req.params.delegateId }).select('delegateId name school country committee');
+    const delegateId = decodeURIComponent(req.params.delegateId).trim();
+    const delegate = await Delegate.findOne({ delegateId }).select('delegateId name school country committee');
     if (!delegate) return res.status(404).json({ message: 'Delegate not found' });
     res.json(delegate);
   } catch (error) {

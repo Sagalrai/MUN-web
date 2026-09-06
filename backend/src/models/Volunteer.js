@@ -13,6 +13,7 @@ const volunteerSchema = new mongoose.Schema(
     school: { type: String, required: true, trim: true },
     department: { type: String, required: true, enum: departments, trim: true },
     position: { type: String, required: true, enum: positions, trim: true },
+    photo: { type: String, default: '' },
   },
   { timestamps: true }
 );
