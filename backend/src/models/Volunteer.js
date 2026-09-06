@@ -11,6 +11,7 @@ const volunteerSchema = new mongoose.Schema(
     phone: { type: String, required: true, trim: true, match: /^\+977\d{10}$/ },
     school: { type: String, required: true, trim: true },
     role: { type: String, required: true, enum: role, trim: true },
+    photo: { type: String, default: '' },
   },
   { timestamps: true }
 );

@@ -1,6 +1,6 @@
 import Volunteer from '../models/Volunteer.js';
 
-const editableFields = ['name', 'email', 'phone', 'school', 'role'];
+const editableFields = ['name', 'email', 'phone', 'school', 'role', 'photo'];
 
 const pickEditableFields = (body) =>
   Object.fromEntries(editableFields.filter((field) => body[field] !== undefined).map((field) => [field, body[field]]));
