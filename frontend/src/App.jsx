@@ -8,7 +8,8 @@ import './App.css'
 /* Data-loading effects synchronize the UI with the API after route/filter changes. */
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const configuredApiUrl = String(import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '')
+const API_URL = configuredApiUrl || 'http://localhost:5000/api'
 const DEPARTMENTS = ['Marketing & PR', 'Design & IT', 'Finance', 'Logistics', 'Delegate Affairs', 'Hospitality', 'Crisis', 'Executive Board']
 const POSITIONS = ['President', 'Vice President', 'Treasurer', 'Chapter Head', 'Chief of Staff', 'Secretary General', 'Director General']
 const delegateFields = [['name', 'Full name'], ['email', 'Email'], ['phone', 'Phone'], ['school', 'School'], ['committee', 'Committee'], ['country', 'Country']]
@@ -19,7 +20,8 @@ async function api(path, options = {}) {
   const token = localStorage.getItem('qrmun_token')
   const headers = { ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }), ...(options.headers || {}) }
   if (token) headers.Authorization = `Bearer ${token}`
-  const response = await fetch(`${API_URL}${path}`, { ...options, headers })
+  const requestPath = `/${String(path).replace(/^\/+/, '')}`
+  const response = await fetch(`${API_URL}${requestPath}`, { ...options, headers })
   const data = await response.json().catch(() => ({}))
   if (!response.ok) throw new Error(data.message || 'Something went wrong')
   return data
