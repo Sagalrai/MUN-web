@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import Counter from './Counter.js';
 
-const role = ['President', 'Vice President', 'Treasurer', 'Chief Of Staffs', 'Chapter Head', 'Secretary General', 'Director General','Marketing & PR', 'Design & IT', 'Finance', 'Logistics', 'Delegate Affairs', 'Hospitality', 'Crisis',];
+const role = ['President', 'Vice President', 'Treasurer', 'Chief Of Staffs', 'Chapter Head', 'Secretary General', 'Director General','Marketing & PRO', 'Design & IT', 'Finance', 'Logistics', 'Delegate Affairs', 'Hospitality', 'Crisis',];
 
 const volunteerSchema = new mongoose.Schema(
   {
