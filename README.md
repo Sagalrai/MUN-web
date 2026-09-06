@@ -4,7 +4,7 @@ A full-stack event management platform for handling delegate registration, QR co
 
 ## Contributions / Team Contributions
 
-### Sagal — Main Developer
+### Sagal & Royan — Main Developer
 
 - Designed and developed the overall website.
 - Set up the frontend and user interface.
@@ -18,8 +18,3 @@ A full-stack event management platform for handling delegate registration, QR co
 - Handled deployment and production configuration.
 - Fixed bugs and tested the overall system.
 - Set up the GitHub repository and development workflow.
-
-### Friend — Contributor
-
-- Changed the OC member list from separate Department + Position fields into a combined Role field.
-- A small but meaningful improvement that kept the OC data cleaner and more practical.
