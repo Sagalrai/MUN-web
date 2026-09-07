@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import QRCode from 'qrcode'
 import { ArrowUpRight, BarChart3, BookOpen, CalendarDays, ChevronRight, CircleUserRound, ClipboardList, Download, FileUp, LayoutDashboard, LogOut, Menu, Pencil, Plus, Search, Trash2, Users, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { BrowserRouter, NavLink, Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { BrowserRouter, NavLink, Route, Routes, useLocation, useParams, useNavigate } from 'react-router-dom'
 import './App.css'
 
 const configuredApiUrl = String(import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '')
