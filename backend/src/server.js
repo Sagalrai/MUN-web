@@ -9,6 +9,8 @@ import delegateRoutes from './routes/delegateRoutes.js';
 import ocRoutes from './routes/ocRoutes.js';
 import volunteerRoutes from './routes/volunteerRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import registrationRoutes from './routes/registrationroutes.js';
+import paymentRoutes from './routes/paymentroutes.js';
 import { requireAuth } from './middleware/auth.js';
 import publicRoutes from './routes/publicRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
@@ -50,6 +52,8 @@ const authLimiter = rateLimit({
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/registration', registrationRoutes);
+app.use('/api/payment', paymentRoutes);
 app.use('/api/delegates', requireAuth, delegateRoutes);
 app.use('/api/ocs', requireAuth, ocRoutes);
 app.use('/api/volunteers', requireAuth, volunteerRoutes);

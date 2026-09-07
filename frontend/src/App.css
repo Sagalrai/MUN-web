@@ -68,3 +68,11 @@
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }.signature-mark { animation: none; } }
 .person-photo { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; background: #e8d9cd; }
 .detail-photo { display: grid; width: 72px; height: 72px; margin: 0 auto 16px; place-items: center; border-radius: 50%; color: #776b60; background: #e8d9cd; font-family: var(--mono); font-size: 16px; object-fit: cover; }
+
+.payment-amount { text-align: center; margin: 24px 0; font-family: 'Playfair Display', serif; font-size: 20px; color: var(--ink); }
+.payment-options { display: grid; gap: 10px; margin-bottom: 20px; }
+.payment-option { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; transition: all .2s ease; font-size: 13px; color: var(--ink); }
+.payment-option:hover { border-color: var(--accent); background: #fdfbf7; }
+.payment-option input { margin: 0; accent-color: var(--accent); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.delegate-id-box { background: #f1e2d7; padding: 16px; border-radius: 8px; text-align: center; margin: 24px 0; font-family: var(--mono); font-size: 14px; border: 1px dashed var(--accent); color: var(--ink); }
