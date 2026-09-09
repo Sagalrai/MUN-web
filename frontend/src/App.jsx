@@ -201,7 +201,7 @@ function App() {
   return admin.role === 'OC' ? <OcApp user={admin} onLogout={() => { localStorage.removeItem('qrmun_token'); setAdmin(null) }} /> : <AdminApp onLogout={() => { localStorage.removeItem('qrmun_token'); setAdmin(null) }} />
 }
 
-function StatusPill({ status }) { return <span className={`status-pill ${status === 'Approved' || status === 'Finalized' ? 'status-active' : 'status-pending'}`}>{status}</span> }
+function StatusPill({ status }) { const label = status === 'Pending Review' ? 'Pending' : status; return <span className={`status-pill ${status === 'Approved' || status === 'Finalized' ? 'status-active' : 'status-pending'}`}>{label}</span> }
 function OrientationComposer({ user, notify }) {
   const [members, setMembers] = useState([]); const [selected, setSelected] = useState([]); const [form, setForm] = useState({ event: 'QRMUN 2026 Orientation', orientationDate: '' }); const [reports, setReports] = useState([]); const [error, setError] = useState('');
   const load = () => { Promise.all([api('/reports/members'), api('/reports/orientation')]).then(([available, ownReports]) => { setMembers(available); setReports(ownReports) }).catch((e) => setError(e.message)) };
