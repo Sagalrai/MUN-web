@@ -6,6 +6,12 @@ import Volunteer from '../models/Volunteer.js';
 
 const memberSelect = 'name volunteerId email school role';
 const populateReport = (query) => query.populate('submittedBy', memberSelect).populate('expectedMembers', memberSelect).populate('actualAttendance.member', memberSelect).populate('reviewedBy', 'name email role');
+const dayStart = (value) => {
+  const text = String(value || '').slice(0, 10);
+  const date = new Date(`${text}T00:00:00.000Z`);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+const dayKey = (value) => new Date(value).toISOString().slice(0, 10);
 
 export const getReportMembers = async (req, res) => {
   try { res.json(await Volunteer.find().select(memberSelect).sort({ name: 1 })); }
@@ -19,6 +25,46 @@ export const listOrientationReports = async (req, res) => {
   } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
+export const listDailyReports = async (req, res) => {
+  try {
+    const ownOnly = req.admin.userType === 'oc' ? { submittedBy: req.admin.userId } : {};
+    const selectedDay = req.query.date ? dayStart(req.query.date) : null;
+    const nextDay = selectedDay ? new Date(selectedDay.getTime() + 86400000) : null;
+    const dateFilter = selectedDay ? { $gte: selectedDay, $lt: nextDay } : null;
+    const orientationQuery = dateFilter ? { ...ownOnly, $or: [{ reportDate: dateFilter }, { reportDate: { $exists: false }, orientationDate: dateFilter }] } : ownOnly;
+    const expenseQuery = dateFilter ? { ...ownOnly, $or: [{ reportDate: dateFilter }, { reportDate: { $exists: false }, purchaseDate: dateFilter }] } : ownOnly;
+    const [orientationReports, expenses] = await Promise.all([
+      populateReport(OrientationReport.find(orientationQuery).sort({ createdAt: -1 })),
+      Expense.find(expenseQuery).populate('submittedBy', memberSelect).sort({ createdAt: -1 })
+    ]);
+    const grouped = new Map();
+    const getDay = (date) => {
+      const key = dayKey(date);
+      if (!grouped.has(key)) grouped.set(key, { date: key, orientationReports: [], expenses: [] });
+      return grouped.get(key);
+    };
+    orientationReports.forEach((report) => getDay(report.reportDate || report.orientationDate).orientationReports.push(report));
+    expenses.forEach((expense) => getDay(expense.reportDate || expense.purchaseDate).expenses.push(expense));
+    const days = [...grouped.values()].sort((a, b) => b.date.localeCompare(a.date)).map((day) => {
+      const latestAttendance = day.orientationReports.find((report) => report.actualAttendance?.length);
+      const latestExpected = day.orientationReports[0];
+      const actual = latestAttendance?.actualAttendance || [];
+      return {
+        ...day,
+        summary: {
+          expected: latestExpected?.expectedMembers?.length || 0,
+          present: actual.filter((entry) => entry.status === 'Present').length,
+          absent: actual.filter((entry) => entry.status === 'Absent').length,
+          purchaseTotal: day.expenses.reduce((total, expense) => total + Number(expense.totalCost || 0), 0),
+          purchaseCount: day.expenses.length,
+          submissionCount: day.orientationReports.length + day.expenses.length
+        }
+      };
+    });
+    res.json(days);
+  } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
 export const submitOrientation = async (req, res) => {
   try {
     const { event, orientationDate, expectedMemberIds } = req.body;
@@ -28,7 +74,7 @@ export const submitOrientation = async (req, res) => {
     if (members.length !== memberIds.length) return res.status(400).json({ message: 'One or more selected OCs are not in the official list' });
     const submittedBy = req.admin.userType === 'oc' ? req.admin.userId : req.body.submittedBy;
     if (!submittedBy || !members.some((member) => member._id.toString() === submittedBy)) return res.status(400).json({ message: 'A valid submitting OC is required' });
-    const report = await OrientationReport.create({ event, orientationDate, submittedBy, expectedMembers: memberIds, reviewStatus: 'Pending Review' });
+    const report = await OrientationReport.create({ event, orientationDate, reportDate: dayStart(orientationDate), submittedBy, expectedMembers: memberIds, reviewStatus: 'Pending Review' });
     res.status(201).json(await populateReport(OrientationReport.findById(report._id)));
   } catch (error) { res.status(400).json({ message: error.message }); }
 };
@@ -78,7 +124,7 @@ export const createExpense = async (req, res) => {
   try {
     const { item, quantity, totalCost, purchaseDate, purpose } = req.body;
     if (!item || !quantity || totalCost === undefined || !purchaseDate || !purpose || !req.file) return res.status(400).json({ message: 'All purchase fields and a receipt image are required' });
-    const expense = await Expense.create({ submittedBy: req.admin.userId, item, quantity, totalCost, purchaseDate, purpose, receiptPath: req.file.path, receiptMimeType: req.file.mimetype });
+    const expense = await Expense.create({ submittedBy: req.admin.userId, reportDate: dayStart(purchaseDate), item, quantity, totalCost, purchaseDate, purpose, receiptPath: req.file.path, receiptMimeType: req.file.mimetype });
     res.status(201).json(await Expense.findById(expense._id).populate('submittedBy', memberSelect));
   } catch (error) { if (req.file?.path) fs.rmSync(req.file.path, { force: true }); res.status(400).json({ message: error.message }); }
 };

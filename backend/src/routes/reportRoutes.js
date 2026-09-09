@@ -3,7 +3,7 @@ import multer from 'multer';
 import fs from 'node:fs';
 import path from 'node:path';
 import { requireAdmin, requireOc } from '../middleware/auth.js';
-import { createExpense, finalizeOrientation, getReceipt, getReportMembers, listExpenses, listOrientationReports, reviewOrientation, submitOrientation } from '../controllers/reportController.js';
+import { createExpense, finalizeOrientation, getReceipt, getReportMembers, listDailyReports, listExpenses, listOrientationReports, reviewOrientation, submitOrientation } from '../controllers/reportController.js';
 
 const router = express.Router();
 const receiptDirectory = path.resolve('uploads/receipts');
@@ -15,6 +15,7 @@ const upload = multer({
 });
 
 router.get('/members', getReportMembers);
+router.get('/days', listDailyReports);
 router.get('/orientation', listOrientationReports);
 router.post('/orientation', submitOrientation);
 router.patch('/orientation/:id/review', requireAdmin, reviewOrientation);
