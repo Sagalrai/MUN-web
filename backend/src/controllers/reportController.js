@@ -1,8 +1,8 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import OrientationReport from '../models/OrientationReport.js';
 import Expense from '../models/Expense.js';
 import Volunteer from '../models/Volunteer.js';
+import { uploadImageBuffer } from '../services/cloudinary.js';
 
 const memberSelect = 'name volunteerId email school role';
 const populateReport = (query) => query.populate('submittedBy', memberSelect).populate('expectedMembers', memberSelect).populate('actualAttendance.member', memberSelect).populate('reviewedBy', 'name email role');
@@ -124,15 +124,24 @@ export const createExpense = async (req, res) => {
   try {
     const { item, quantity, totalCost, purchaseDate, purpose } = req.body;
     if (!item || !quantity || totalCost === undefined || !purchaseDate || !purpose || !req.file) return res.status(400).json({ message: 'All purchase fields and a receipt image are required' });
-    const expense = await Expense.create({ submittedBy: req.admin.userId, reportDate: dayStart(purchaseDate), item, quantity, totalCost, purchaseDate, purpose, receiptPath: req.file.path, receiptMimeType: req.file.mimetype });
+    const uploaded = await uploadImageBuffer(req.file.buffer, { folder: 'qrmun/receipts' });
+    const expense = await Expense.create({ submittedBy: req.admin.userId, reportDate: dayStart(purchaseDate), item, quantity, totalCost, purchaseDate, purpose, receiptUrl: uploaded.secure_url, receiptPublicId: uploaded.public_id, receiptMimeType: req.file.mimetype });
     res.status(201).json(await Expense.findById(expense._id).populate('submittedBy', memberSelect));
-  } catch (error) { if (req.file?.path) fs.rmSync(req.file.path, { force: true }); res.status(400).json({ message: error.message }); }
+  } catch (error) { res.status(400).json({ message: error.message }); }
 };
 
 export const getReceipt = async (req, res) => {
   try {
     const expense = await Expense.findById(req.params.id);
     if (!expense || (req.admin.userType === 'oc' && expense.submittedBy.toString() !== req.admin.userId)) return res.status(404).json({ message: 'Receipt not found' });
-    res.type(expense.receiptMimeType).sendFile(path.resolve(expense.receiptPath));
+    const receiptReference = expense.receiptUrl || expense.receiptPath;
+    if (!receiptReference) return res.status(404).json({ message: 'Receipt not found' });
+    if (/^https?:\/\//i.test(receiptReference)) {
+      const response = await fetch(receiptReference);
+      if (!response.ok) return res.status(404).json({ message: 'Receipt not found' });
+      res.type(expense.receiptMimeType).send(Buffer.from(await response.arrayBuffer()));
+      return;
+    }
+    res.type(expense.receiptMimeType).sendFile(path.resolve(receiptReference));
   } catch (error) { res.status(404).json({ message: 'Receipt not found' }); }
 };

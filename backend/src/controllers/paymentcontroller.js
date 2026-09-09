@@ -1,6 +1,7 @@
 import Registration from '../models/Registration.js';
 import Payment from '../models/Payment.js';
 import Delegate from '../models/delegate.js';
+import { uploadImageBuffer } from '../services/cloudinary.js';
 
 export const initiatePayment = async (req, res) => {
   try {
@@ -127,13 +128,20 @@ export const confirmManualPayment = async (req, res) => {
 export const uploadPaymentProof = async (req, res) => {
   try {
     const { registrationId, proofUrl } = req.body;
+    if (!registrationId || (!req.file && !proofUrl)) return res.status(400).json({ message: 'Registration ID and payment proof are required' });
 
     const registration = await Registration.findById(registrationId);
     if (!registration) {
       return res.status(404).json({ message: 'Registration not found' });
     }
 
-    registration.paymentProof = proofUrl;
+    if (req.file) {
+      const uploaded = await uploadImageBuffer(req.file.buffer, { folder: 'qrmun/payment-proofs' });
+      registration.paymentProof = uploaded.secure_url;
+      registration.paymentProofPublicId = uploaded.public_id;
+    } else {
+      registration.paymentProof = proofUrl;
+    }
     registration.status = 'paid';
     registration.paymentMethod = 'manual';
     await registration.save();

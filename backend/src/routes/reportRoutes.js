@@ -1,17 +1,14 @@
 import express from 'express';
 import multer from 'multer';
-import fs from 'node:fs';
-import path from 'node:path';
 import { requireAdmin, requireOc } from '../middleware/auth.js';
+import { supportedImageTypes } from '../services/cloudinary.js';
 import { createExpense, finalizeOrientation, getReceipt, getReportMembers, listDailyReports, listExpenses, listOrientationReports, reviewOrientation, submitOrientation } from '../controllers/reportController.js';
 
 const router = express.Router();
-const receiptDirectory = path.resolve('uploads/receipts');
-fs.mkdirSync(receiptDirectory, { recursive: true });
 const upload = multer({
-  storage: multer.diskStorage({ destination: receiptDirectory, filename: (req, file, callback) => callback(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${path.extname(file.originalname).toLowerCase()}`) }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, callback) => callback(null, ['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype))
+  fileFilter: (req, file, callback) => callback(null, supportedImageTypes.has(file.mimetype))
 });
 
 router.get('/members', getReportMembers);

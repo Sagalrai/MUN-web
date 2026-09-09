@@ -18,7 +18,8 @@ const registrationSchema = new mongoose.Schema(
       enum: ['esewa', 'manual', 'none'],
       default: 'none'
     },
-    paymentProof: { type: String }, // Path to uploaded screenshot for manual payments
+    paymentProof: { type: String },
+    paymentProofPublicId: { type: String },
     paymentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment' }
   },
   { timestamps: true }

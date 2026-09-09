@@ -22,6 +22,9 @@ FRONTEND_URL=https://your-frontend-domain.example
 JWT_SECRET=use-a-long-random-secret
 SEED_ADMIN_EMAIL=admin@example.com
 SEED_ADMIN_PASSWORD=use-a-one-time-seed-password
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
 ```
 
 Set `FRONTEND_URL` to the exact deployed frontend origin. Multiple origins can be comma-separated.

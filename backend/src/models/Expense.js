@@ -8,7 +8,9 @@ const expenseSchema = new mongoose.Schema({
   totalCost: { type: Number, required: true, min: 0 },
   purchaseDate: { type: Date, required: true },
   purpose: { type: String, required: true, trim: true },
-  receiptPath: { type: String, required: true },
+  receiptPath: { type: String },
+  receiptUrl: { type: String },
+  receiptPublicId: { type: String },
   receiptMimeType: { type: String, required: true }
 }, { timestamps: true });
 
