@@ -14,3 +14,13 @@ export const requireAuth = (req, res, next) => {
     res.status(401).json({ message: 'Invalid or expired token' });
   }
 };
+
+export const requireAdmin = (req, res, next) => {
+  if (req.admin?.userType === 'oc') return res.status(403).json({ message: 'Admin access required' });
+  next();
+};
+
+export const requireOc = (req, res, next) => {
+  if (req.admin?.userType !== 'oc') return res.status(403).json({ message: 'OC access required' });
+  next();
+};

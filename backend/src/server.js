@@ -11,10 +11,11 @@ import volunteerRoutes from './routes/volunteerRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import registrationRoutes from './routes/registrationroutes.js';
 import paymentRoutes from './routes/paymentroutes.js';
-import { requireAuth } from './middleware/auth.js';
+import { requireAuth, requireAdmin } from './middleware/auth.js';
 import publicRoutes from './routes/publicRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import importRoutes from './routes/importRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
 
 dotenv.config();
 
@@ -54,11 +55,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/registration', registrationRoutes);
 app.use('/api/payment', paymentRoutes);
-app.use('/api/delegates', requireAuth, delegateRoutes);
-app.use('/api/ocs', requireAuth, ocRoutes);
-app.use('/api/volunteers', requireAuth, volunteerRoutes);
-app.use('/api/dashboard', requireAuth, dashboardRoutes);
-app.use('/api/import', requireAuth, importRoutes);
+app.use('/api/delegates', requireAuth, requireAdmin, delegateRoutes);
+app.use('/api/ocs', requireAuth, requireAdmin, ocRoutes);
+app.use('/api/volunteers', requireAuth, requireAdmin, volunteerRoutes);
+app.use('/api/dashboard', requireAuth, requireAdmin, dashboardRoutes);
+app.use('/api/import', requireAuth, requireAdmin, importRoutes);
+app.use('/api/reports', requireAuth, reportRoutes);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({

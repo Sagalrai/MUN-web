@@ -1,4 +1,5 @@
 import Volunteer from '../models/Volunteer.js';
+import bcrypt from 'bcryptjs';
 
 const editableFields = ['name', 'email', 'phone', 'school', 'role', 'photo'];
 
@@ -43,7 +44,8 @@ export const getVolunteerById = async (req, res) => {
 
 export const createVolunteer = async (req, res) => {
   try {
-    const volunteer = await Volunteer.create(req.body);
+    const { password, ...details } = req.body;
+    const volunteer = await Volunteer.create({ ...details, ...(password ? { passwordHash: await bcrypt.hash(password, 12) } : {}) });
     res.status(201).json(volunteer);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -52,9 +54,10 @@ export const createVolunteer = async (req, res) => {
 
 export const updateVolunteer = async (req, res) => {
   try {
+    const passwordUpdate = req.body.password ? { passwordHash: await bcrypt.hash(req.body.password, 12) } : {};
     const volunteer = await Volunteer.findOneAndUpdate(
       { volunteerId: req.params.id },
-      pickEditableFields(req.body),
+      { ...pickEditableFields(req.body), ...passwordUpdate },
       { returnDocument: 'after', runValidators: true }
     );
     if (!volunteer) return res.status(404).json({ message: 'Volunteer not found' });
