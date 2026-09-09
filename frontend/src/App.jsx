@@ -42,7 +42,7 @@ async function api(path, options = {}) {
 function Crest() { return <span className="crest">Q</span> }
 function Signature() { return <span className="signature-mark" aria-label="Made by Sagal">Sagal</span> }
 function Button({ children, quiet = false, ...props }) { return <button className={`button ${quiet ? 'button-quiet' : 'button-primary'}`} {...props}>{children}</button> }
-function PageFrame({ children }) { return <motion.div className="page-content" initial={{ opacity: 0, y: 18, scale: .985 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 105, damping: 18, mass: .7 }} layout>{children}</motion.div> }
+function PageFrame({ children }) { const path = typeof window === 'undefined' ? '' : window.location.pathname; const viewClass = path.includes('purchase') ? 'purchase-view' : path.includes('orientation') ? 'orientation-view' : ''; return <motion.div className={`page-content ${viewClass}`} initial={{ opacity: 0, y: 18, scale: .985 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 105, damping: 18, mass: .7 }} layout>{children}</motion.div> }
 function ErrorMessage({ message }) { return message ? <p className="message error">{message}</p> : null }
 function Loading() { return <div className="loading-state"><span />Loading registry...</div> }
 function PhoneField({ value, onChange }) {
