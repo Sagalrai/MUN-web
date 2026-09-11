@@ -55,11 +55,11 @@ function PhoneField({ value, onChange }) {
 function MemberPhoto({ row, large = false }) { const className = large ? 'person-photo detail-photo' : 'person-photo'; return row.photo ? <img className={className} src={row.photo} alt={`${row.name} profile`} /> : <span className={`${large ? 'detail-photo' : 'person-avatar'} person-placeholder`}>{row.name.split(' ').map((p) => p[0]).join('')}</span> }
 function Sidebar({ open, onClose, onLogout }) {
   const navItems = [{ label: 'Dashboard', to: '/admin', icon: LayoutDashboard }, { label: 'Delegates', to: '/admin/delegates', icon: Users }, { label: 'OC', to: '/admin/volunteers', icon: ClipboardList }, { label: 'Orientation', to: '/admin/orientation-reports', icon: ClipboardCheck }, { label: 'Purchases', to: '/admin/purchase-reports', icon: ReceiptIcon }, { label: 'OC Dashboard', to: '/admin/oc-workspace', icon: CalendarDays }, { label: 'Import data', to: '/admin/import', icon: FileUp }]
-  return <><button className={`mobile-scrim ${open ? 'show' : ''}`} aria-label="Close menu" onClick={onClose} /><aside className={`sidebar ${open ? 'sidebar-open' : ''}`}><div className="sidebar-brand"><Crest /><div><strong>QRMUN</strong><small>2026 · Made in Nepal</small></div><button className="mobile-close" onClick={onClose} aria-label="Close menu"><X size={18} /></button></div><p className="nav-label">Workspace</p><nav className="main-nav">{navItems.map(({ label, to, icon: Icon }) => <NavLink end={to === '/'} key={to} to={to} onClick={onClose} className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}><Icon size={17} strokeWidth={1.7} /><span>{label}</span></NavLink>)}</nav><div className="sidebar-bottom"><button className="nav-item" onClick={onLogout}><LogOut size={17} strokeWidth={1.7} /><span>Log out</span></button><div className="user-chip"><span className="avatar">AR</span><span><strong>Admin account</strong><small>Operations</small></span></div></div></aside></>
+  return <><button className={`mobile-scrim ${open ? 'show' : ''}`} aria-label="Close menu" onClick={onClose} /><aside className={`sidebar ${open ? 'sidebar-open' : ''}`}><div className="sidebar-brand"><Crest /><div><strong>QRMUN</strong><small>2026 · Made in Nepal</small></div><button className="mobile-close" onClick={onClose} aria-label="Close menu"><X size={18} /></button></div><p className="nav-label">Workspace</p><nav className="main-nav">{navItems.map(({ label, to, icon: Icon }) => <NavLink end={to === '/admin'} key={to} to={to} onClick={onClose} className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}><Icon size={17} strokeWidth={1.7} /><span>{label}</span></NavLink>)}</nav><div className="sidebar-bottom"><button className="nav-item" onClick={onLogout}><LogOut size={17} strokeWidth={1.7} /><span>Log out</span></button><div className="user-chip"><span className="avatar">AR</span><span><strong>Admin account</strong><small>Operations</small></span></div></div></aside></>
 }
 function ReceiptIcon(props) { return <Image {...props} /> }
 
-function Header({ onMenu }) { const location = useLocation(); const title = location.pathname === '/' ? 'Dashboard' : location.pathname.includes('volunteers') ? 'OC' : location.pathname.includes('orientation') ? 'Orientation' : location.pathname.includes('purchase') ? 'Purchases' : location.pathname.includes('oc-workspace') ? 'OC Dashboard' : location.pathname.includes('import') ? 'Import data' : 'Delegates'; return <header className="content-header"><button className="menu-trigger" onClick={onMenu} aria-label="Open menu"><Menu size={21} /></button><div className="breadcrumbs"><span>QRMUN 2026</span><ChevronRight size={14} /><strong>{title}</strong></div><div className="header-actions"><span className="status-online">● Database live</span><div className="header-profile"><span className="avatar">AR</span><span>Admin</span></div></div></header> }
+function Header({ onMenu }) { const location = useLocation(); const title = location.pathname === '/admin' ? 'Dashboard' : location.pathname.includes('volunteers') ? 'OC' : location.pathname.includes('orientation') ? 'Orientation' : location.pathname.includes('purchase') ? 'Purchases' : location.pathname.includes('oc-workspace') ? 'OC Dashboard' : location.pathname.includes('import') ? 'Import data' : 'Delegates'; return <header className="content-header"><button className="menu-trigger" onClick={onMenu} aria-label="Open menu"><Menu size={21} /></button><div className="breadcrumbs"><span>QRMUN 2026</span><ChevronRight size={14} /><strong>{title}</strong></div><div className="header-actions"><span className="status-online">● Database live</span><div className="header-profile"><span className="avatar">AR</span><span>Admin</span></div></div></header> }
 function SectionHeading({ eyebrow, title, description, action }) { return <div className="section-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1>{description && <p className="heading-description">{description}</p>}</div>{action}</div> }
 function EmptyState({ text }) { return <div className="empty-state"><Users size={25} /><p>{text}</p></div> }
 
@@ -124,16 +124,15 @@ function RegistrationPage() {
 
 function PaymentPage() {
   const { id } = useParams();
+  const registrationToken = localStorage.getItem('qrmun_registration_token');
   const [registration, setRegistration] = useState(null);
-  const [method, setMethod] = useState('esewa');
   const [proof, setProof] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() => registrationToken ? '' : 'This payment link must be opened from your registration confirmation.');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const registrationToken = localStorage.getItem('qrmun_registration_token');
 
   useEffect(() => {
-    if (!registrationToken) { setError('This payment link must be opened from your registration confirmation.'); return; }
+    if (!registrationToken) return;
     api(`/registration/${id}`, { registrationToken }).then(setRegistration).catch((e) => setError(e.message));
   }, [id, registrationToken]);
 
@@ -170,20 +169,14 @@ function OcApp({ user, onLogout }) { const [toast, setToast] = useState(''); con
 
 function App() {
   const [admin, setAdmin] = useState(null);
-  const [checking, setChecking] = useState(true);
   const location = useLocation();
+  const isStaffRoute = location.pathname.startsWith('/admin') || location.pathname.startsWith('/oc');
+  const [checking, setChecking] = useState(() => isStaffRoute && Boolean(localStorage.getItem('qrmun_token')));
 
   useEffect(() => {
-    if (!location.pathname.startsWith('/admin') && !location.pathname.startsWith('/oc')) {
-      setChecking(false);
-      return;
-    }
-    if (!localStorage.getItem('qrmun_token')) {
-      setChecking(false);
-      return;
-    }
+    if (!isStaffRoute || !localStorage.getItem('qrmun_token')) return;
     api('/auth/me').then(setAdmin).catch(() => localStorage.removeItem('qrmun_token')).finally(() => setChecking(false))
-  }, [location.pathname]);
+  }, [isStaffRoute]);
 
   if (location.pathname === '/') return <PublicLanding />;
   if (location.pathname.startsWith('/delegate/')) return <PublicVerification />;
