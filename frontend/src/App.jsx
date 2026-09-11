@@ -24,6 +24,7 @@ const getPublicAppUrl = () => {
 }
 const API_URL = getApiBaseUrl()
 const PUBLIC_APP_URL = getPublicAppUrl()
+const registrationTokenKey = (registrationId) => `qrmun_registration_token_${registrationId}`
 const ROLES = ['President', 'Vice President', 'Treasurer', 'Chapter Head', 'Chief of Staff', 'Secretary General', 'Director General', 'Marketing & PRO', 'Design & IT', 'Finance', 'Logistics', 'Delegate Affairs', 'Hospitality', 'Crisis' ]
 const delegateFields = [['name', 'Full name'], ['email', 'Email'], ['phone', 'Phone'], ['school', 'School'], ['committee', 'Committee'], ['country', 'Country']]
 const volunteerFields = [['name', 'Full name'], ['email', 'Email'], ['phone', 'Phone'], ['school', 'School'], ['role', 'Role'], ['photo', 'Photo'], ['password', 'OC login password']]
@@ -111,7 +112,7 @@ function RegistrationPage() {
     setError('');
     try {
       const result = await api('/registration', { method: 'POST', body: JSON.stringify({ ...form, age: Number(form.age) }) });
-      localStorage.setItem('qrmun_registration_token', result.accessToken);
+      localStorage.setItem(registrationTokenKey(result.registration._id), result.accessToken);
       navigate(`/payment/${result.registration._id}`);
     } catch (e) {
       setError(e.message);
@@ -124,7 +125,7 @@ function RegistrationPage() {
 
 function PaymentPage() {
   const { id } = useParams();
-  const registrationToken = localStorage.getItem('qrmun_registration_token');
+  const registrationToken = localStorage.getItem(registrationTokenKey(id));
   const [registration, setRegistration] = useState(null);
   const [proof, setProof] = useState('');
   const [error, setError] = useState(() => registrationToken ? '' : 'This payment link must be opened from your registration confirmation.');
