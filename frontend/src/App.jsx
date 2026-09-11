@@ -4,6 +4,7 @@ import { ArrowUpRight, BarChart3, BookOpen, CalendarDays, Check, ChevronRight, C
 import { useEffect, useState } from 'react'
 import { BrowserRouter, NavLink, Route, Routes, useLocation, useParams, useNavigate } from 'react-router-dom'
 import './App.css'
+import { conference } from './conference'
 
 const configuredApiUrl = String(import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '')
 const configuredPublicUrl = String(import.meta.env.VITE_PUBLIC_URL || '').trim().replace(/\/+$/, '')
@@ -30,10 +31,12 @@ const blankForm = (type) => Object.fromEntries((type === 'delegate' ? delegateFi
 
 async function api(path, options = {}) {
   const token = localStorage.getItem('qrmun_token')
-  const headers = { ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }), ...(options.headers || {}) }
-  if (token) headers.Authorization = `Bearer ${token}`
+  const { registrationToken, ...requestOptions } = options
+  const headers = { ...(requestOptions.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }), ...(requestOptions.headers || {}) }
+  if (registrationToken) headers.Authorization = `Bearer ${registrationToken}`
+  else if (token) headers.Authorization = `Bearer ${token}`
   const requestPath = `/${String(path).replace(/^\/+/, '')}`
-  const response = await fetch(`${API_URL}${requestPath}`, { ...options, headers })
+  const response = await fetch(`${API_URL}${requestPath}`, { ...requestOptions, headers })
   const data = await response.json().catch(() => ({}))
   if (!response.ok) throw new Error(data.message || 'Something went wrong')
   return data
@@ -51,7 +54,7 @@ function PhoneField({ value, onChange }) {
 }
 function MemberPhoto({ row, large = false }) { const className = large ? 'person-photo detail-photo' : 'person-photo'; return row.photo ? <img className={className} src={row.photo} alt={`${row.name} profile`} /> : <span className={`${large ? 'detail-photo' : 'person-avatar'} person-placeholder`}>{row.name.split(' ').map((p) => p[0]).join('')}</span> }
 function Sidebar({ open, onClose, onLogout }) {
-  const navItems = [{ label: 'Dashboard', to: '/', icon: LayoutDashboard }, { label: 'Delegates', to: '/delegates', icon: Users }, { label: 'OC', to: '/volunteers', icon: ClipboardList }, { label: 'Orientation', to: '/orientation-reports', icon: ClipboardCheck }, { label: 'Purchases', to: '/purchase-reports', icon: ReceiptIcon }, { label: 'OC Dashboard', to: '/oc-workspace', icon: CalendarDays }, { label: 'Import data', to: '/import', icon: FileUp }]
+  const navItems = [{ label: 'Dashboard', to: '/admin', icon: LayoutDashboard }, { label: 'Delegates', to: '/admin/delegates', icon: Users }, { label: 'OC', to: '/admin/volunteers', icon: ClipboardList }, { label: 'Orientation', to: '/admin/orientation-reports', icon: ClipboardCheck }, { label: 'Purchases', to: '/admin/purchase-reports', icon: ReceiptIcon }, { label: 'OC Dashboard', to: '/admin/oc-workspace', icon: CalendarDays }, { label: 'Import data', to: '/admin/import', icon: FileUp }]
   return <><button className={`mobile-scrim ${open ? 'show' : ''}`} aria-label="Close menu" onClick={onClose} /><aside className={`sidebar ${open ? 'sidebar-open' : ''}`}><div className="sidebar-brand"><Crest /><div><strong>QRMUN</strong><small>2026 · Made in Nepal</small></div><button className="mobile-close" onClick={onClose} aria-label="Close menu"><X size={18} /></button></div><p className="nav-label">Workspace</p><nav className="main-nav">{navItems.map(({ label, to, icon: Icon }) => <NavLink end={to === '/'} key={to} to={to} onClick={onClose} className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}><Icon size={17} strokeWidth={1.7} /><span>{label}</span></NavLink>)}</nav><div className="sidebar-bottom"><button className="nav-item" onClick={onLogout}><LogOut size={17} strokeWidth={1.7} /><span>Log out</span></button><div className="user-chip"><span className="avatar">AR</span><span><strong>Admin account</strong><small>Operations</small></span></div></div></aside></>
 }
 function ReceiptIcon(props) { return <Image {...props} /> }
@@ -84,6 +87,18 @@ function QrModal({ record, onClose }) { const [src, setSrc] = useState(''); cons
 
 function ImportPage({ notify }) { const [type, setType] = useState('delegates'); const [file, setFile] = useState(null); const [preview, setPreview] = useState(null); const [error, setError] = useState(''); const [loading, setLoading] = useState(false); const previewFile = async () => { if (!file) return; setLoading(true); try { const form = new FormData(); form.append('type', type); form.append('file', file); setPreview(await api('/import/preview', { method: 'POST', body: form })) } catch (e) { setError(e.message) } finally { setLoading(false) } }; const confirm = async () => { setLoading(true); try { await api('/import/confirm', { method: 'POST', body: JSON.stringify({ type, rows: preview.rows.filter((row) => row.valid).map((row) => row.data) }) }); notify('Import completed'); setPreview(null); setFile(null) } catch (e) { setError(e.message) } finally { setLoading(false) } }; return <PageFrame><SectionHeading eyebrow="Data operations" title="Import data" description="Bring your registry in carefully, with a preview before anything is saved." /><ErrorMessage message={error} /><section className="surface import-surface"><div className="import-controls"><label>Record type<select value={type} onChange={(e) => { setType(e.target.value); setPreview(null) }}><option value="delegates">Delegates</option><option value="volunteers">OC / Volunteers</option></select></label><label className="file-input">CSV file<input type="file" accept=".csv,text/csv" onChange={(e) => setFile(e.target.files[0])} /></label><Button onClick={previewFile} disabled={!file || loading}>{loading ? 'Checking...' : 'Preview file'}</Button></div><p className="import-help">Required columns: {type === 'delegates' ? 'name, email, phone, school, committee, country' : 'name, email, phone, school, department, position'}</p>{preview && <div className="preview"><div className="table-meta"><span><strong>{preview.valid}</strong> valid · <strong>{preview.invalid}</strong> invalid</span><span>{preview.total} rows found</span></div><div className="preview-rows">{preview.rows.map((row) => <div className={row.valid ? 'preview-row' : 'preview-row invalid'} key={row.row}><span>Row {row.row}</span><span>{row.data.name || 'Unnamed record'}</span><span>{row.valid ? 'Ready' : row.errors.join(', ')}</span></div>)}</div>{preview.valid > 0 && <Button onClick={confirm} disabled={loading}>Confirm import of {preview.valid} rows</Button>}</div>}</section></PageFrame> }
 
+function PublicLanding() {
+  const navigate = useNavigate();
+  const [showSticky, setShowSticky] = useState(false);
+  const [openFaq, setOpenFaq] = useState(null);
+  useEffect(() => { const onScroll = () => setShowSticky(window.scrollY > 480); onScroll(); window.addEventListener('scroll', onScroll, { passive: true }); return () => window.removeEventListener('scroll', onScroll) }, []);
+  const goTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  const faqs = [['Who can attend?', 'Students who are ready to collaborate, debate, and learn through the Model United Nations experience.'], ['How do I register?', 'Complete the registration form, then submit your payment proof for the organising team to review.'], ['When will allocations be announced?', 'Committee and country allocations will be communicated after registrations and payments are reviewed.']];
+  return <main className="public-site"><header className="public-nav"><button className="public-brand" onClick={() => goTo('home')}><Crest /><span>{conference.name}</span></button><nav><button onClick={() => goTo('about')}>About</button><button onClick={() => goTo('committees')}>Committees</button><button onClick={() => goTo('faq')}>FAQ</button></nav><button className="public-login" onClick={() => navigate('/login')}>Staff login</button></header><section id="home" className="public-hero"><div className="hero-copy"><p className="public-eyebrow">Nepal · Model United Nations</p><h1>{conference.name}</h1><p className="hero-tagline">{conference.tagline}</p><div className="hero-details"><span><CalendarDays size={17} />{conference.date}</span><span>⌖ {conference.venue}</span></div><div className="hero-actions"><Button onClick={() => navigate('/register')}>Register now <ArrowUpRight size={16} /></Button><Button quiet onClick={() => goTo('about')}>Explore conference</Button></div></div><VisualPlaceholder label="Hero image placeholder" image={conference.heroImage} /></section><section id="about" className="public-section split-section"><VisualPlaceholder label="About image placeholder" image={conference.aboutImage} /><div><p className="public-eyebrow">The conference</p><h2>A room for thoughtful diplomacy.</h2><p>QRMUN brings students together to understand international affairs, practise public speaking, and turn different perspectives into workable resolutions.</p><dl className="conference-facts"><div><dt>Date</dt><dd>{conference.date}</dd></div><div><dt>Venue</dt><dd>{conference.venue}</dd></div><div><dt>Registration fee</dt><dd>{conference.fee}</dd></div><div><dt>Deadline</dt><dd>{conference.deadline}</dd></div></dl></div></section><section className="public-section"><p className="public-eyebrow">Why attend</p><h2>Make your voice count.</h2><div className="benefit-grid"><InfoCard title="Debate with purpose" text="Develop research, negotiation, and public-speaking skills in a supportive setting." /><InfoCard title="Meet your peers" text="Build lasting connections with delegates from different schools and backgrounds." /><InfoCard title="Lead with confidence" text="Learn to listen closely, form an argument, and make a difference together." /></div></section><section id="committees" className="public-section committee-section"><div className="section-intro"><div><p className="public-eyebrow">Committees</p><h2>Find your forum.</h2></div><p>Committee details and allocations will be announced by the organising team.</p></div><div className="committee-grid">{conference.committees.map((committee, index) => <article className="committee-card" key={committee.name}><span>0{index + 1}</span><h3>{committee.name}</h3><p>{committee.focus}</p><i>Committee visual placeholder</i></article>)}</div></section><section className="public-section timeline-section"><p className="public-eyebrow">Your journey</p><h2>From application to assembly.</h2><ol className="timeline"><li><span>01</span><div><strong>Register</strong><p>Tell us who you are and where you study.</p></div></li><li><span>02</span><div><strong>Submit payment</strong><p>Use the supplied QR code and add your proof for review.</p></div></li><li><span>03</span><div><strong>Receive your status</strong><p>The team confirms your payment and shares the next steps.</p></div></li></ol></section><section id="faq" className="public-section faq-section"><p className="public-eyebrow">Questions</p><h2>Frequently asked.</h2>{faqs.map(([question, answer], index) => <article className="faq-item" key={question}><button aria-expanded={openFaq === index} onClick={() => setOpenFaq(openFaq === index ? null : index)}>{question}<ChevronRight size={19} /></button>{openFaq === index && <p>{answer}</p>}</article>)}</section><section className="final-cta"><p className="public-eyebrow">The next session begins with you</p><h2>Ready to join?</h2><Button onClick={() => navigate('/register')}>Register now <ArrowUpRight size={16} /></Button></section>{showSticky && <motion.button className="floating-register" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} onClick={() => navigate('/register')}>Register now <ArrowUpRight size={16} /></motion.button>}</main>
+}
+function VisualPlaceholder({ label, image }) { return image ? <img className="visual-placeholder image" src={image} alt="" /> : <div className="visual-placeholder" role="img" aria-label={label}><span>Replaceable visual</span><strong>{label}</strong></div> }
+function InfoCard({ title, text }) { return <article className="benefit-card"><span>✦</span><h3>{title}</h3><p>{text}</p></article> }
+
 function RegistrationPage() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', school: '', age: '', grade: '' });
   const [error, setError] = useState('');
@@ -95,8 +110,9 @@ function RegistrationPage() {
     setLoading(true);
     setError('');
     try {
-      const result = await api('/registration', { method: 'POST', body: JSON.stringify(form) });
-      navigate(`/payment/${result._id}`);
+      const result = await api('/registration', { method: 'POST', body: JSON.stringify({ ...form, age: Number(form.age) }) });
+      localStorage.setItem('qrmun_registration_token', result.accessToken);
+      navigate(`/payment/${result.registration._id}`);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -114,27 +130,23 @@ function PaymentPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const registrationToken = localStorage.getItem('qrmun_registration_token');
 
   useEffect(() => {
-    api(`/registration/${id}`).then(setRegistration).catch((e) => setError(e.message));
-  }, [id]);
+    if (!registrationToken) { setError('This payment link must be opened from your registration confirmation.'); return; }
+    api(`/registration/${id}`, { registrationToken }).then(setRegistration).catch((e) => setError(e.message));
+  }, [id, registrationToken]);
 
   const handlePayment = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
-      if (method === 'esewa') {
-        const result = await api('/payment/initiate', { method: 'POST', body: JSON.stringify({ registrationId: id, method: 'esewa', amount: 1000 }) }); // Example amount
-        if (result.success) {
-          await api('/payment/verify', { method: 'POST', body: JSON.stringify({ registrationId: id, transactionId: 'TXN' + Date.now(), amount: 1000, gateway: 'esewa' }) });
-          navigate('/payment-success');
-        }
-      } else {
-        if (!proof) return setError('Please upload payment proof.');
-        const body = new FormData(); body.append('registrationId', id); body.append('proof', proof); await api('/payment/upload-proof', { method: 'POST', body });
-        navigate('/payment-success');
-      }
+      if (!proof) { setError('Please upload payment proof.'); return; }
+      await api('/payment/initiate', { method: 'POST', body: JSON.stringify({ registrationId: id, method: 'manual' }), registrationToken });
+      const body = new FormData(); body.append('registrationId', id); body.append('proof', proof);
+      const result = await api('/payment/upload-proof', { method: 'POST', body, registrationToken });
+      navigate('/payment-success', { state: { status: result.status } });
     } catch (e) {
       setError(e.message);
     } finally {
@@ -142,25 +154,18 @@ function PaymentPage() {
     }
   };
 
+  if (error && !registration) return <main className="login-page"><div className="login-card"><h1>Payment unavailable.</h1><ErrorMessage message={error} /><Button onClick={() => navigate('/register')}>Start registration</Button></div></main>;
   if (!registration) return <Loading />;
 
-  return <main className="login-page"><div className="login-card"><div className="login-brand"><Crest /><strong>QRMUN</strong></div><p className="eyebrow">Payment</p><h1>Complete your registration.</h1><p>Delegate: <strong>{registration.name}</strong></p><div className="payment-amount">Amount Due: <strong>Rs. 1000</strong></div><form onSubmit={handlePayment} className="payment-form"><div className="payment-options"><label className="payment-option"><input type="radio" name="method" value="esewa" checked={method === 'esewa'} onChange={(e) => setMethod(e.target.value)} /><span>Pay via eSewa</span></label><label className="payment-option"><input type="radio" name="method" value="manual" checked={method === 'manual'} onChange={(e) => setMethod(e.target.value)} /><span>Bank Transfer / Other</span></label></div>{method === 'manual' && <label>Upload Proof<input type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" onChange={(e) => setProof(e.target.files[0] || '')} /></label>}<ErrorMessage message={error} /><Button type="submit" disabled={loading}>{loading ? 'Processing...' : 'Confirm Payment'}</Button></form></div><Signature /></main> }
+  return <main className="login-page"><div className="login-card"><div className="login-brand"><Crest /><strong>QRMUN</strong></div><p className="eyebrow">Payment</p><h1>Complete your registration.</h1><p>Delegate: <strong>{registration.name}</strong></p><div className="payment-amount">Amount Due: <strong>{conference.fee}</strong></div><form onSubmit={handlePayment} className="payment-form"><div className="payment-qr">{/* Replace conference.qrImage in conference.js with the real QR image when available. */}{conference.qrImage ? <img src={conference.qrImage} alt="Payment QR code" /> : <div><span>QR code placeholder</span><small>Add the real payment QR image in conference.js</small></div>}</div><label>Upload payment proof<input required type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" onChange={(e) => setProof(e.target.files[0] || '')} /></label><ErrorMessage message={error} /><Button type="submit" disabled={loading}>{loading ? 'Submitting...' : 'Submit payment proof'}</Button></form></div><Signature /></main> }
 
-function PaymentSuccess() {
-  const [status, setStatus] = useState('checking');
-  const [delegateId, setDelegateId] = useState(null);
-  useEffect(() => {
-    setDelegateId('DEL-0001'); 
-    setStatus('verified');
-  }, []);
+function PaymentSuccess() { const navigate = useNavigate(); return <main className="login-page"><div className="login-card"><div className="login-brand"><Crest /><strong>QRMUN</strong></div><p className="eyebrow">Confirmation</p><h1>Payment submitted.</h1><p>Your proof is now with the conference team for review. We’ll share the next steps after your payment is confirmed.</p><Button onClick={() => navigate('/')}>Back to home</Button></div><Signature /></main> }
 
-  return <main className="login-page"><div className="login-card"><div className="login-brand"><Crest /><strong>QRMUN</strong></div><p className="eyebrow">Confirmation</p><h1>{status === 'verified' ? 'Payment Successful!' : 'Payment Submitted'}</h1><p>{status === 'verified' ? 'Welcome to the conference. Your registration is now official.' : 'Your payment is being reviewed by the administration.'}</p>{delegateId && <div className="delegate-id-box">Delegate ID: <strong>{delegateId}</strong></div>}<Button onClick={() => window.location.href = '/'} >Back to Home</Button></div><Signature /></main> }
-
-function Login({ onLogin }) { const [kind, setKind] = useState('admin'); const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [error, setError] = useState(''); const submit = async (e) => { e.preventDefault(); try { const result = await api(kind === 'admin' ? '/auth/login' : '/auth/oc-login', { method: 'POST', body: JSON.stringify({ email, password }) }); localStorage.setItem('qrmun_token', result.token); onLogin(result.admin || result.user) } catch (err) { setError(err.message) } }; return <main className="login-page"><div className="login-card"><div className="login-brand"><Crest /><strong>QRMUN</strong></div><p className="eyebrow">{kind === 'admin' ? 'Administration' : 'OC workspace'}</p><h1>Welcome back.</h1><p>Sign in.</p><div className="login-switch"><button className={kind === 'admin' ? 'active' : ''} onClick={() => setKind('admin')} type="button">Admin</button><button className={kind === 'oc' ? 'active' : ''} onClick={() => setKind('oc')} type="button">OC</button></div><form onSubmit={submit}><label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label><label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /><small>OC access is set in OC.</small></label><ErrorMessage message={error} /><Button type="submit">Sign in</Button></form></div><Signature /></main> }
+function Login({ onLogin }) { const [kind, setKind] = useState('admin'); const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [error, setError] = useState(''); const [loading, setLoading] = useState(false); const navigate = useNavigate(); const submit = async (e) => { e.preventDefault(); setLoading(true); setError(''); try { const result = await api(kind === 'admin' ? '/auth/login' : '/auth/oc-login', { method: 'POST', body: JSON.stringify({ email, password }) }); const user = result.admin || result.user; localStorage.setItem('qrmun_token', result.token); onLogin(user); navigate(user.role === 'OC' ? '/oc' : '/admin', { replace: true }) } catch (err) { setError(err.message) } finally { setLoading(false) } }; return <main className="login-page"><div className="login-card"><div className="login-brand"><Crest /><strong>QRMUN</strong></div><p className="eyebrow">{kind === 'admin' ? 'Administration' : 'OC workspace'}</p><h1>Welcome back.</h1><p>Staff sign in.</p><div className="login-switch"><button className={kind === 'admin' ? 'active' : ''} onClick={() => setKind('admin')} type="button">Admin</button><button className={kind === 'oc' ? 'active' : ''} onClick={() => setKind('oc')} type="button">OC</button></div><form onSubmit={submit}><label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label><label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /><small>OC access is set in OC.</small></label><ErrorMessage message={error} /><Button disabled={loading} type="submit">{loading ? 'Signing in...' : 'Sign in'}</Button></form></div><Signature /></main> }
 
 function PublicVerification() { const { delegateId } = useParams(); const [delegate, setDelegate] = useState(null); const [error, setError] = useState(''); useEffect(() => { api(`/public/delegate/${delegateId}`).then(setDelegate).catch((e) => setError(e.message)) }, [delegateId]); const isBackendIssue = error && /failed to fetch|network|load|fetch/i.test(error); return <main className="verification-page">{delegate ? <motion.section className="verification-card" initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }}><div className="verified-badge">✓</div><p className="verified-label">Verified delegate</p><h1>✓ VERIFIED</h1><div className="verification-rule" /><h2>{delegate.name}</h2><p className="verification-id">{delegate.delegateId}</p><div className="verification-details"><div><small>School</small><strong>{delegate.school}</strong></div><div><small>Country</small><strong>{delegate.country}</strong></div><div><small>Committee</small><strong>{delegate.committee}</strong></div></div><p className="verification-footer">QRMUN 2026 · Official delegate registry</p></motion.section> : error ? <section className="verification-card not-found"><Crest /><p className="verified-label">Public registry</p><h1>{isBackendIssue ? 'Verification service unavailable.' : 'Delegate not found.'}</h1><p>{isBackendIssue ? 'The QR check could not reach the backend. Please confirm the application is running and the API URL is configured correctly.' : <>We could not verify <strong>{delegateId}</strong>. Please check the QR code or delegate ID and try again.</>}</p></section> : <Loading />}<Signature /></main> }
 
-function AdminApp({ onLogout }) { const [menuOpen, setMenuOpen] = useState(false); const [toast, setToast] = useState(''); const notify = (message) => { setToast(message); window.setTimeout(() => setToast(''), 3000) }; return <div className="app-layout"><Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} onLogout={onLogout} /><main className="main-area"><Header onMenu={() => setMenuOpen(true)} /><Routes><Route path="/" element={<Dashboard />} /><Route path="/delegates" element={<MemberPage type="delegate" notify={notify} />} /><Route path="/volunteers" element={<MemberPage type="volunteer" notify={notify} />} /><Route path="/orientation-reports" element={<DailyReports />} /><Route path="/purchase-reports" element={<DailyReports />} /><Route path="/oc-workspace" element={<OcWorkspace user={{ role: 'Admin' }} notify={notify} />} /><Route path="/import" element={<ImportPage notify={notify} />} /><Route path="*" element={<Dashboard />} /></Routes></main><Signature />{toast && <motion.div className="toast" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>{toast}</motion.div>}</div> }
+function AdminApp({ onLogout }) { const [menuOpen, setMenuOpen] = useState(false); const [toast, setToast] = useState(''); const notify = (message) => { setToast(message); window.setTimeout(() => setToast(''), 3000) }; return <div className="app-layout"><Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} onLogout={onLogout} /><main className="main-area"><Header onMenu={() => setMenuOpen(true)} /><Routes><Route path="/admin" element={<Dashboard />} /><Route path="/admin/delegates" element={<MemberPage type="delegate" notify={notify} />} /><Route path="/admin/volunteers" element={<MemberPage type="volunteer" notify={notify} />} /><Route path="/admin/orientation-reports" element={<DailyReports />} /><Route path="/admin/purchase-reports" element={<DailyReports />} /><Route path="/admin/oc-workspace" element={<OcWorkspace user={{ role: 'Admin' }} notify={notify} />} /><Route path="/admin/import" element={<ImportPage notify={notify} />} /><Route path="*" element={<Dashboard />} /></Routes></main><Signature />{toast && <motion.div className="toast" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>{toast}</motion.div>}</div> }
 function OcApp({ user, onLogout }) { const [toast, setToast] = useState(''); const notify = (message) => { setToast(message); window.setTimeout(() => setToast(''), 3000) }; return <div className="app-layout"><main className="main-area"><header className="content-header"><div className="breadcrumbs"><strong>QRMUN 2026 · OC Dashboard</strong></div><button className="button button-quiet" onClick={onLogout}><LogOut size={16} />Log out</button></header><OcWorkspace user={user} notify={notify} /></main>{toast && <motion.div className="toast" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>{toast}</motion.div>}</div> }
 
 function App() {
@@ -169,19 +174,7 @@ function App() {
   const location = useLocation();
 
   useEffect(() => {
-    if (location.pathname.startsWith('/delegate/')) {
-      setChecking(false);
-      return;
-    }
-    if (location.pathname === '/register') {
-      setChecking(false);
-      return;
-    }
-    if (location.pathname.startsWith('/payment/')) {
-      setChecking(false);
-      return;
-    }
-    if (location.pathname === '/payment-success') {
+    if (!location.pathname.startsWith('/admin') && !location.pathname.startsWith('/oc')) {
       setChecking(false);
       return;
     }
@@ -192,12 +185,15 @@ function App() {
     api('/auth/me').then(setAdmin).catch(() => localStorage.removeItem('qrmun_token')).finally(() => setChecking(false))
   }, [location.pathname]);
 
+  if (location.pathname === '/') return <PublicLanding />;
   if (location.pathname.startsWith('/delegate/')) return <PublicVerification />;
   if (location.pathname === '/register') return <RegistrationPage />;
   if (location.pathname.startsWith('/payment/')) return <PaymentPage />;
   if (location.pathname === '/payment-success') return <PaymentSuccess />;
+  if (location.pathname === '/login') return <Login onLogin={setAdmin} />;
   if (checking) return <Loading />;
   if (!admin) return <Login onLogin={setAdmin} />;
+  if (location.pathname.startsWith('/oc')) return admin.role === 'OC' ? <OcApp user={admin} onLogout={() => { localStorage.removeItem('qrmun_token'); setAdmin(null) }} /> : <AdminApp onLogout={() => { localStorage.removeItem('qrmun_token'); setAdmin(null) }} />;
   return admin.role === 'OC' ? <OcApp user={admin} onLogout={() => { localStorage.removeItem('qrmun_token'); setAdmin(null) }} /> : <AdminApp onLogout={() => { localStorage.removeItem('qrmun_token'); setAdmin(null) }} />
 }
 

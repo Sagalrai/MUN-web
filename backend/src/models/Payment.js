@@ -5,7 +5,8 @@ const paymentSchema = new mongoose.Schema(
     registrationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Registration',
-      required: true
+      required: true,
+      unique: true
     },
     transactionId: { type: String, unique: true, required: true },
     amount: { type: Number, required: true },
